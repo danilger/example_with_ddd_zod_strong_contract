@@ -1,0 +1,17 @@
+{
+  "name": "example-with-zod-strong-contract",
+  "private": true,
+  "workspaces": [
+    "contract",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "build:contract": "npm run build -w @repo/contract",
+    "build:server": "npm run build -w server",
+    "build:client": "npm run build -w client",
+    "build": "npm run build:contract && npm run build:server && npm run build:client",
+    "dev:server": "npm run start:dev -w server",
+    "dev:client": "npm run dev -w client"
+  }
+}
