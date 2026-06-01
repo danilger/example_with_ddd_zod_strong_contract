@@ -11,6 +11,31 @@
 
 Персистенция — **SQLite** через **Drizzle** и драйвер **libSQL** (`@libsql/client`, локальный файл `file:...`), чтобы на Windows не собирать нативный `better-sqlite3`.
 
+## С чего начинать в Cursor
+
+Новый bounded context или расширение проекта удобно вести **не сразу в коде**, а через skills в `.cursor/skills/`.
+
+### DDD-онбординг (обязательная отправная точка)
+
+Скилл [`.cursor/skills/ddd-onboarding`](.cursor/skills/ddd-onboarding) задаёт **последовательный пайплайн** к целевой DDD-архитектуре и сильному контракту:
+
+1. Domain Discovery (вопросы, без кода)
+2. `docs/domain/<slug>/domain.md`
+3. Контракты в `contract/` (ts-rest + Zod)
+4. Явное подтверждение контрактов
+5. Backend (`server/`, слои DDD)
+6. Frontend (`client/`)
+
+Перескакивать этапы нельзя: сначала домен и контракт, затем сервер, затем клиент. В Cursor вызовите скилл при запросе вроде «онбординг», «новый bounded context», «contract-first фича» — агент будет держаться этой цепочки.
+
+### Карта домена (для чтения и навигации)
+
+Скилл [`.cursor/skills/domain-drawio-map`](.cursor/skills/domain-drawio-map) строит **draw.io-диаграмму** (`.dio`) по структуре модуля в `server/src/<context>/`: слои Application (ports, use cases), Domain (entities, value objects), Presentation, Infrastructure, со ссылками на файлы. Это даёт **визуальное представление поддомена** и упрощает обзор кода после онбординга или при ревью.
+
+**После создания карты в первую очередь проверьте направления зависимостей** по стрелкам импортов: они должны идти **только внутрь** (`presentation → application → domain`; infrastructure реализует порты application). На карте **не должно быть** обратных связей — например, стрелки от **сущности или value object** к **infrastructure**, от **domain** к **presentation**, от **application** к **infrastructure** (кроме зависимости use case от порта). Такие стрелки — сигнал нарушения DDD и повод исправить код, а не «норма» диаграммы.
+
+Запросы: «построить карту домена», «карта домена», «обнови .dio по импортам».
+
 ## Структура
 
 | Пакет | Назначение |
