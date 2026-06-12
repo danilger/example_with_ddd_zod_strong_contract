@@ -1,11 +1,12 @@
 import { Controller, NotFoundException } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
-import { userContract, UserDto } from '@repo/contract';
+import { userContract } from '@repo/contract';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case';
 import { GetUserUseCase } from '../application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from '../application/use-cases/list-users.use-case';
-import { User } from '../domain/entities/user.entity';
 import { UpdateUserUseCase } from '../application/use-cases/update-user.use-case';
+import { DeleteUserUseCase } from '../application/use-cases/delete-user.use-case';
+import { UserDtoAdapter } from './user-dto.adapter';
 
 @Controller()
 export class UserController {
@@ -14,7 +15,9 @@ export class UserController {
     private readonly getUser: GetUserUseCase,
     private readonly listUsers: ListUsersUseCase,
     private readonly updateUser: UpdateUserUseCase,
-  ) { }
+    private readonly deleteUser: DeleteUserUseCase,
+    private readonly userDtoAdapter: UserDtoAdapter,
+  ) {}
 
   @TsRestHandler(userContract.createUser, { validateResponses: true })
   create() {
@@ -23,7 +26,7 @@ export class UserController {
         const user = await this.createUser.execute(body);
         return {
           status: 201 as const,
-          body: this.toResponse(user),
+          body: this.userDtoAdapter.adapt(user),
         };
       } catch (error) {
         if (error instanceof Error && error.message.includes('already exists')) {
@@ -47,7 +50,7 @@ export class UserController {
         const user = await this.getUser.execute(params.id);
         return {
           status: 200 as const,
-          body: this.toResponse(user),
+          body: this.userDtoAdapter.adapt(user),
         };
       } catch (error) {
         if (error instanceof NotFoundException) {
@@ -70,7 +73,7 @@ export class UserController {
       const users = await this.listUsers.execute();
       return {
         status: 200 as const,
-        body: users.map((u) => this.toResponse(u)),
+        body: users.map((u) => this.userDtoAdapter.adapt(u)),
       };
     });
   }
@@ -78,21 +81,48 @@ export class UserController {
   @TsRestHandler(userContract.updateUser, { validateResponses: true })
   update() {
     return tsRestHandler(userContract.updateUser, async ({ params, body }) => {
-      const user = await this.updateUser.execute(params.id, body);
-      return {
-        status: 200 as const,
-        body: this.toResponse(user),
+      try {
+        const user = await this.updateUser.execute(params.id, body);
+        return {
+          status: 200 as const,
+          body: this.userDtoAdapter.adapt(user),
+        };
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          return {
+            status: 404 as const,
+            body: { message: 'User not found' },
+          };
+        }
+        return {
+          status: 400 as const,
+          body: { message: 'Bad request' },
+        };
       }
-    })
+    });
   }
 
-  private toResponse(user: User): UserDto {
-    return {
-      id: user.getId().getValue(),
-      name: user.getName(),
-      email: user.getEmail().getValue(),
-      createdAt: user.getCreatedAt().toISOString(),
-      updatedAt: user.getUpdatedAt().toISOString(),
-    };
+  @TsRestHandler(userContract.deleteUser, { validateResponses: true })
+  delete() {
+    return tsRestHandler(userContract.deleteUser, async ({ params }) => {
+      try {
+        await this.deleteUser.execute(params.id);
+        return {
+          status: 204 as const,
+          body: null,
+        };
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          return {
+            status: 404 as const,
+            body: { message: 'User not found' },
+          };
+        }
+        return {
+          status: 400 as const,
+          body: { message: 'Bad request' },
+        };
+      }
+    });
   }
 }

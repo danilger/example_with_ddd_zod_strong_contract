@@ -1,10 +1,10 @@
 import { Controller, NotFoundException } from '@nestjs/common';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
-import { postContract, PostDto } from '@repo/contract';
+import { postContract } from '@repo/contract';
 import { CreatePostUseCase } from '../application/use-cases/create-post.use-case';
 import { GetPostUseCase } from '../application/use-cases/get-post.use-case';
 import { ListPostsUseCase } from '../application/use-cases/list-posts.use-case';
-import { Post } from '../domain/entities/post.entity';
+import { PostDtoAdapter } from './post-dto.adapter';
 
 @Controller()
 export class PostController {
@@ -12,6 +12,7 @@ export class PostController {
     private readonly createPost: CreatePostUseCase,
     private readonly getPost: GetPostUseCase,
     private readonly listPosts: ListPostsUseCase,
+    private readonly postDtoAdapter: PostDtoAdapter,
   ) {}
 
   @TsRestHandler(postContract.createPost, { validateResponses: true })
@@ -21,7 +22,7 @@ export class PostController {
         const post = await this.createPost.execute(body);
         return {
           status: 201 as const,
-          body: this.toResponse(post),
+          body: this.postDtoAdapter.adapt(post),
         };
       } catch {
         return {
@@ -39,7 +40,7 @@ export class PostController {
         const post = await this.getPost.execute(params.id);
         return {
           status: 200 as const,
-          body: this.toResponse(post),
+          body: this.postDtoAdapter.adapt(post),
         };
       } catch (error) {
         if (error instanceof NotFoundException) {
@@ -62,18 +63,8 @@ export class PostController {
       const posts = await this.listPosts.execute();
       return {
         status: 200 as const,
-        body: posts.map((p) => this.toResponse(p)),
+        body: posts.map((p) => this.postDtoAdapter.adapt(p)),
       };
     });
-  }
-
-  private toResponse(post: Post): PostDto {
-    return {
-      id: post.getId().getValue(),
-      title: post.getTitle(),
-      content: post.getContent(),
-      createdAt: post.getCreatedAt().toISOString(),
-      updatedAt: post.getUpdatedAt().toISOString(),
-    };
   }
 }

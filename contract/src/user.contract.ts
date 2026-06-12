@@ -29,45 +29,58 @@ export const UpdateUserBodySchema = z.object({
 });
 
 /** Единый API-контракт для backend и frontend. */
-export const userContract = c.router({
-  createUser: {
-    method: 'POST',
-    path: '/users',
-    body: CreateUserBodySchema,
-    responses: {
-      201: UserSchema,
-      409: ErrorSchema,
-      400: ErrorSchema,
+export const userContract = c.router(
+  {
+    createUser: {
+      method: 'POST',
+      path: '/users',
+      body: CreateUserBodySchema,
+      responses: {
+        201: UserSchema,
+        409: ErrorSchema,
+        400: ErrorSchema,
+      },
     },
-  },
-  getUser: {
-    method: 'GET',
-    path: '/users/:id',
-    pathParams: UserIdParamSchema,
-    responses: {
-      200: UserSchema,
-      404: ErrorSchema,
+    getUser: {
+      method: 'GET',
+      path: '/users/:id',
+      pathParams: UserIdParamSchema,
+      responses: {
+        200: UserSchema,
+        404: ErrorSchema,
+      },
     },
-  },
-  listUsers: {
-    method: 'GET',
-    path: '/users',
-    responses: {
-      200: z.array(UserSchema),
+    listUsers: {
+      method: 'GET',
+      path: '/users',
+      responses: {
+        200: z.array(UserSchema),
+      },
     },
-  },
-  updateUser: {
-    method:'PATCH',
-    path: '/users/:id',
-    pathParams: UserIdParamSchema,
-    body: UpdateUserBodySchema,
-    responses:{
-      200: UserSchema,
-      404: ErrorSchema,
-      400: ErrorSchema,
+    updateUser: {
+      method: 'PATCH',
+      path: '/users/:id',
+      pathParams: UserIdParamSchema,
+      body: UpdateUserBodySchema,
+      responses: {
+        200: UserSchema,
+        404: ErrorSchema,
+        400: ErrorSchema,
+      }
+    },
+    deleteUser: {
+      method: 'DELETE',
+      path: '/users/:id',
+      pathParams: UserIdParamSchema,
+      responses: {
+        204: z.null(),
+        404: ErrorSchema,
+        400: ErrorSchema,
+      }
     }
-  }
-});
+  },
+  { strictStatusCodes: true } // сервер гарантирует, что отдаёт ровно то, что обещал контракт
+);
 
 export type UserDto = z.infer<typeof UserSchema>;
 export type CreateUserDto = z.infer<typeof CreateUserBodySchema>;

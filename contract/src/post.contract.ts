@@ -24,6 +24,7 @@ export const PostErrorSchema = z.object({
   message: z.string(),
 });
 
+/** Единый API-контракт для backend и frontend. */
 export const postContract = c.router({
   createPost: {
     method: 'POST',
@@ -50,7 +51,9 @@ export const postContract = c.router({
       200: z.array(PostSchema),
     },
   },
-});
+},
+  { strictStatusCodes: true } // сервер гарантирует, что отдаёт ровно то, что обещал контракт
+);
 
 export type PostDto = z.infer<typeof PostSchema>;
 export type CreatePostDto = z.infer<typeof CreatePostBodySchema>;

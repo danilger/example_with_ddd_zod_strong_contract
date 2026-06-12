@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="Cp5L4b8D1_kuh_I2JsMD" name="Страница 1">
-        <mxGraphModel dx="3008" dy="2318" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="3952" dy="2318" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -16,7 +16,7 @@
                     <mxGeometry x="416" y="402" width="874" height="265" as="geometry"/>
                 </mxCell>
                 <mxCell id="32" value="Entities" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;flipH=1;flipV=0;" parent="9" vertex="1">
-                    <mxGeometry x="28" y="55" width="315" height="155" as="geometry"/>
+                    <mxGeometry x="28" y="55" width="315" height="153" as="geometry"/>
                 </mxCell>
                 <UserObject label="post.entity.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\domain\entities\post.entity.ts" id="35">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="32" vertex="1">
@@ -62,23 +62,23 @@
                 </mxCell>
                 <UserObject label="post.controller.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\presentation\post.controller.ts" id="37">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="20" vertex="1">
-                        <mxGeometry x="20" y="24" width="202" height="52" as="geometry"/>
+                        <mxGeometry x="60" y="76" width="202" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
                 <mxCell id="21" value="Infrastructure" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;" parent="18" vertex="1">
                     <mxGeometry x="2065" y="50" width="520" height="510" as="geometry"/>
                 </mxCell>
-                <UserObject label="drizzle-post.repository.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\infrastructure\adapters\drizzle-post.repository.ts" id="38">
+                <UserObject label="drizzle-post.repository.adapter.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\infrastructure\adapters\drizzle-post.repository.adapter.ts" id="38">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="21" vertex="1">
-                        <mxGeometry x="20" y="24" width="288" height="52" as="geometry"/>
+                        <mxGeometry x="20" y="24" width="388" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
                 <mxCell id="19" value="Contract (@repo/contract)" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;" parent="18" vertex="1">
-                    <mxGeometry x="1895" y="717" width="650" height="510" as="geometry"/>
+                    <mxGeometry x="1895" y="717" width="646" height="510" as="geometry"/>
                 </mxCell>
                 <UserObject label="post.contract.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\contract\src\post.contract.ts" id="41">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="19" vertex="1">
-                        <mxGeometry x="20" y="24" width="220" height="52" as="geometry"/>
+                        <mxGeometry x="20" y="24" width="183" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
                 <mxCell id="50" value="PostId" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;" parent="1" source="35" target="36" edge="1">

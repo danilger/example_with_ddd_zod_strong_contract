@@ -11,7 +11,7 @@ import * as schema from '../../../db/schema';
 type DbClient = LibSQLDatabase<typeof schema>;
 
 @Injectable()
-export class DrizzlePostRepository implements PostRepositoryPort {
+export class DrizzlePostRepositoryAdapter implements PostRepositoryPort {
   constructor(@Inject(DB) private readonly db: DbClient) {}
 
   async save(post: Post): Promise<Post> {

@@ -68,7 +68,7 @@
                 <mxCell id="21" value="Infrastructure" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;" parent="18" vertex="1">
                     <mxGeometry x="2065" y="50" width="520" height="510" as="geometry"/>
                 </mxCell>
-                <UserObject label="drizzle-post.repository.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\infrastructure\adapters\drizzle-post.repository.ts" id="38">
+                <UserObject label="drizzle-post.repository.adapter.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\infrastructure\adapters\drizzle-post.repository.adapter.ts" id="38">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="21" vertex="1">
                         <mxGeometry x="20" y="24" width="480" height="52" as="geometry"/>
                     </mxCell>

@@ -1,11 +1,11 @@
 <mxfile host="65bd71144e">
     <diagram id="Cp5L4b8D1_kuh_I2JsMD" name="Страница 1">
-        <mxGraphModel dx="3476" dy="2487" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="4145" dy="1920" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="18" value="" style="swimlane;startSize=0;rounded=1;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=none;gradientDirection=south;" parent="1" vertex="1">
-                    <mxGeometry x="-1917" y="-616" width="2710" height="1592" as="geometry"/>
+                    <mxGeometry x="-1927" y="-606" width="2710" height="1592" as="geometry"/>
                 </mxCell>
                 <mxCell id="11" value="Application" style="swimlane;startSize=0;rounded=1;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;" parent="18" vertex="1">
                     <mxGeometry x="108" y="650" width="1662" height="832" as="geometry">
@@ -78,21 +78,21 @@
                 <mxCell id="21" value="Infrastructure" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;" parent="18" vertex="1">
                     <mxGeometry x="2065" y="79" width="520" height="510" as="geometry"/>
                 </mxCell>
-                <UserObject label="drizzle-user.repository.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\user\infrastructure\adapters\drizzle-user.repository.ts" id="38">
+                <UserObject label="drizzle-user.repository.adapter.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\user\infrastructure\adapters\drizzle-user.repository.adapter.ts" id="38">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="21" vertex="1">
-                        <mxGeometry x="116" y="39" width="298" height="52" as="geometry"/>
+                        <mxGeometry x="70" y="72" width="298" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
-                <UserObject label="in-memory-user.repository.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\user\infrastructure\adapters\in-memory-user.repository.ts" id="40">
+                <UserObject label="in-memory-user.repository.adapter.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\user\infrastructure\adapters\in-memory-user.repository.adapter.ts" id="40">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="21" vertex="1">
-                        <mxGeometry x="14" y="198" width="331" height="52" as="geometry"/>
+                        <mxGeometry x="70" y="198" width="331" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
-                <mxCell id="19" value="Contract (@repo/contract)" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;arcSize=13;" vertex="1" parent="18">
+                <mxCell id="19" value="Contract (@repo/contract)" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;arcSize=13;" parent="18" vertex="1">
                     <mxGeometry x="1967" y="993" width="650" height="510" as="geometry"/>
                 </mxCell>
                 <UserObject label="user.contract.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\contract\src\user.contract.ts" id="41">
-                    <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" vertex="1" parent="19">
+                    <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="19" vertex="1">
                         <mxGeometry x="20" y="24" width="220" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
@@ -157,23 +157,23 @@
                 <mxCell id="66" value="User" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;" parent="1" source="40" target="35" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="67" value="userContract, UserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="37" target="41">
+                <mxCell id="67" value="userContract, UserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" parent="1" source="37" target="41" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="68" value="CreateUserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="27" target="41">
+                <mxCell id="68" value="CreateUserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" parent="1" source="27" target="41" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="69" value="UpdateUserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="30" target="41">
+                <mxCell id="69" value="UpdateUserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" parent="1" source="30" target="41" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="70" value="UpdateUserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="25" target="41">
+                <mxCell id="70" value="UpdateUserDto" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" parent="1" source="25" target="41" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
                             <mxPoint x="164" y="129"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="71" value="UpdateUserDto, UserSchema" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="38" target="41">
+                <mxCell id="71" value="UpdateUserDto, UserSchema" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;dashed=1;dashPattern=8 8;" parent="1" source="38" target="41" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>

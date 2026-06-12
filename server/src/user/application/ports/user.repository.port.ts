@@ -7,6 +7,7 @@ export interface UserRepositoryPort {
   findByEmail(email: string): Promise<User | null> | User | null;
   findAll(): Promise<User[]> | User[];
   update(id: string, dto: UpdateUserDto): Promise<User> | User;
+  delete(id:string): Promise<void> | void
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');

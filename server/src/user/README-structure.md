@@ -4,7 +4,7 @@
 
 - `domain/` — сущности и value objects (без Nest и HTTP).
 - `application/` — сценарии (use case-ы) и **порты** (`UserRepositoryPort`).
-- `infrastructure/` — адаптеры к портам (`DrizzleUserRepository`, при необходимости in-memory).
+- `infrastructure/` — адаптеры к портам (`DrizzleUserRepositoryAdapter`, при необходимости in-memory).
 - `presentation/` — вход HTTP (`UserController`), только маппинг в DTO контракта.
 
 Контракт API и DTO:

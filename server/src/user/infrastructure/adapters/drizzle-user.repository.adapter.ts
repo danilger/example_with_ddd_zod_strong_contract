@@ -11,8 +11,8 @@ import * as schema from '../../../db/schema';
 type DbClient = LibSQLDatabase<typeof schema>;
 
 @Injectable()
-export class DrizzleUserRepository implements UserRepositoryPort {
-  constructor(@Inject(DB) private readonly db: DbClient) { }
+export class DrizzleUserRepositoryAdapter implements UserRepositoryPort {
+  constructor(@Inject(DB) private readonly db: DbClient) {}
 
   async save(user: User): Promise<User> {
     const row = {
@@ -93,7 +93,10 @@ export class DrizzleUserRepository implements UserRepositoryPort {
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<User> {
-    const [result] = await this.db.update(schema.userTable).set({ id, name: dto.name }).returning()
+    const [result] = await this.db
+      .update(schema.userTable)
+      .set({ id, name: dto.name })
+      .returning();
     if (!result) {
       throw new Error('User not found');
     }
@@ -107,6 +110,20 @@ export class DrizzleUserRepository implements UserRepositoryPort {
       email: result.email,
       createdAt: new Date(result.createdAt),
       updatedAt: new Date(result.updatedAt),
-    })
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    const result = await this.db
+      .delete(schema.userTable)
+      .where(eq(schema.userTable.id, id))
+      .returning();
+    if (result.length === 0) {
+      throw new Error('User not found');
+    }
+    const parsed = UserSchema.safeParse(result[0]);
+    if (!parsed.success) {
+      throw new Error('DB row does not match shared contract');
+    }
   }
 }
