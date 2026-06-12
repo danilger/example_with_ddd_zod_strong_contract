@@ -24,6 +24,10 @@ export const ErrorSchema = z.object({
   message: z.string(),
 });
 
+export const UpdateUserBodySchema = z.object({
+  name: z.string().min(2),
+});
+
 /** Единый API-контракт для backend и frontend. */
 export const userContract = c.router({
   createUser: {
@@ -52,7 +56,19 @@ export const userContract = c.router({
       200: z.array(UserSchema),
     },
   },
+  updateUser: {
+    method:'PATCH',
+    path: '/users/:id',
+    pathParams: UserIdParamSchema,
+    body: UpdateUserBodySchema,
+    responses:{
+      200: UserSchema,
+      404: ErrorSchema,
+      400: ErrorSchema,
+    }
+  }
 });
 
 export type UserDto = z.infer<typeof UserSchema>;
 export type CreateUserDto = z.infer<typeof CreateUserBodySchema>;
+export type UpdateUserDto = z.infer<typeof UpdateUserBodySchema>;

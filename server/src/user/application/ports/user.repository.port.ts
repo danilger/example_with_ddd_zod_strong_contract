@@ -1,3 +1,4 @@
+import { UpdateUserDto } from '@repo/contract';
 import { User } from '../../domain/entities/user.entity';
 
 export interface UserRepositoryPort {
@@ -5,6 +6,7 @@ export interface UserRepositoryPort {
   findById(id: string): Promise<User | null> | User | null;
   findByEmail(email: string): Promise<User | null> | User | null;
   findAll(): Promise<User[]> | User[];
+  update(id: string, dto: UpdateUserDto): Promise<User> | User;
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');

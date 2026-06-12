@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="Cp5L4b8D1_kuh_I2JsMD" name="Страница 1">
-        <mxGraphModel dx="1851" dy="1693" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="3008" dy="2318" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -70,11 +70,11 @@
                 </mxCell>
                 <UserObject label="drizzle-post.repository.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\server\src\post\infrastructure\adapters\drizzle-post.repository.ts" id="38">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="21" vertex="1">
-                        <mxGeometry x="20" y="24" width="480" height="52" as="geometry"/>
+                        <mxGeometry x="20" y="24" width="288" height="52" as="geometry"/>
                     </mxCell>
                 </UserObject>
                 <mxCell id="19" value="Contract (@repo/contract)" style="swimlane;startSize=0;strokeColor=#4D9900;fontSize=25;fontColor=#4D9900;gradientColor=#E6E6E6;gradientDirection=south;rounded=1;" parent="18" vertex="1">
-                    <mxGeometry x="650" y="50" width="650" height="510" as="geometry"/>
+                    <mxGeometry x="1895" y="717" width="650" height="510" as="geometry"/>
                 </mxCell>
                 <UserObject label="post.contract.ts" link="cursor://file/D:\projects\example_with_ddd_zod_strong_contract\contract\src\post.contract.ts" id="41">
                     <mxCell style="text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;" parent="19" vertex="1">

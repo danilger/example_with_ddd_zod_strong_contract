@@ -2,21 +2,66 @@
 
 ## Bundled diagram (copy with the skill)
 
-**`example.domain-map.dio`** in this folder is a frozen copy of the canonical layout: swimlane nesting, styles, `UserObject` + `cursor://file/...` pattern, and import edges (no `*.module.ts`).
+**`example.domain-map.dio`** in this folder is a frozen copy of the canonical layout for bounded context **`post`**:
+
+- Swimlane nesting and fixed ids (`18`, `11`, `9`, `32`, `34`, `22`, `23`, `20`, **`19`**, `21`)
+- Green DDD styling, `UserObject` + `cursor://file/...` on every file node
+- **Contract** lane (`id="19"`) with `contract/src/post.contract.ts` (`id="41"`)
+- **Curved** import edges (`entityRelationEdgeStyle`, `curved=1`)
+- **Labels** on every edge: imported symbol name(s), `fontColor=#4D4D4D`
+- **Dashed** edges (`dashed=1;dashPattern=8 8`) from module files to contract only
+- No `*.module.ts`
 
 When moving the skill to another repo, copy the whole directory:
 
 `.cursor/skills/domain-drawio-map/`  
 (including `SKILL.md`, `reference.md`, and **`example.domain-map.dio`**).
 
-In the new project, open `example.domain-map.dio` in draw.io (or Cursor) and replace `cursor://file/...` targets with that workspace’s absolute paths, or regenerate `server/src/<context>/docs/.dio` using `SKILL.md`.
+In the new project, regenerate `server/src/<context>/docs/.dio` using `SKILL.md`, or open `example.domain-map.dio` and replace paths with that workspace’s absolute `cursor://file/...` URLs.
 
-## Optional live mirror (this repo only)
+## Live mirrors (this repo)
 
-In **tutor**, the same diagram may also live at `server/src/post/docs/.dio`. If both exist and diverge, treat **`example.domain-map.dio` here as the skill’s contract** and refresh it when you intentionally change the reference style.
+| Path | Context | Notes |
+|------|---------|--------|
+| `server/src/post/docs/.dio` | post | May lag behind skill example |
+| `server/src/user/docs/.dio` | user | Fuller example (4 use cases, 2 VOs, 2 adapters) |
 
-## What to diff when generating
+If a live mirror and **`example.domain-map.dio`** diverge on **style rules** (contract lane, edge labels, curved/dashed), refresh the example and `SKILL.md` first, then regenerate module maps.
 
-- Parent chain and fixed ids (`18`, `11`, `9`, `32`, `34`, `22`, `23`, `20`, `21`).
-- Swimlane `style` strings (copy verbatim from `example.domain-map.dio`).
-- Edge style: `strokeColor=#4D4D4D`, `orthogonalEdgeStyle`, `curved=1`, `endArrow=classic`.
+## Fixed structural ids
+
+| id | Role |
+|----|------|
+| `0`, `1` | mxGraph root |
+| `18` | Outer swimlane (empty title) |
+| `11` | Application |
+| `9` | Domain |
+| `32` | Entities |
+| `34` | Value objects |
+| `22` | Ports |
+| `23` | Use cases |
+| `20` | Presentation |
+| `19` | Contract (`@repo/contract`) |
+| `21` | Infrastructure |
+
+File nodes: reuse `25` (port), `27+` (use cases), `35+` (entity/VOs), `37` (controller), `38+` (repos), `41` (contract file) when possible.
+
+Edges: start numbering at `50`.
+
+## Edge styles (diff when generating)
+
+**Intra-context (solid, curved, labeled):**
+
+```
+edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;
+```
+
+**Contract (dashed, curved, labeled):** same + `dashed=1;dashPattern=8 8;`
+
+**Label:** `value="<Symbol>"` or `value="SymA, SymB"` on the `mxCell` edge; symbols from the actual `import { ... }` in the source file.
+
+## What to scan for edges
+
+1. **Relative imports** within `server/src/<context>/` → solid edge, label = imported bindings.
+2. **`from '@repo/contract'`** in presentation / application / infrastructure files on the diagram → dashed edge to `contract/src/<context>.contract.ts`.
+3. Skip `@nestjs/*`, `drizzle-orm`, paths leaving the bounded context (except contract).

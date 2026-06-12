@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { z } from 'zod';
-import { UserSchema } from '@repo/contract';
+import { UpdateUserDto, UserSchema } from '@repo/contract';
 import { UserRepositoryPort } from '../../application/ports/user.repository.port';
 import { User } from '../../domain/entities/user.entity';
 import { DB } from '../../../db/db.port';
@@ -12,7 +12,7 @@ type DbClient = LibSQLDatabase<typeof schema>;
 
 @Injectable()
 export class DrizzleUserRepository implements UserRepositoryPort {
-  constructor(@Inject(DB) private readonly db: DbClient) {}
+  constructor(@Inject(DB) private readonly db: DbClient) { }
 
   async save(user: User): Promise<User> {
     const row = {
@@ -90,5 +90,23 @@ export class DrizzleUserRepository implements UserRepositoryPort {
           updatedAt: new Date(r.data.updatedAt),
         }),
       );
+  }
+
+  async update(id: string, dto: UpdateUserDto): Promise<User> {
+    const [result] = await this.db.update(schema.userTable).set({ id, name: dto.name }).returning()
+    if (!result) {
+      throw new Error('User not found');
+    }
+    const parsed = UserSchema.safeParse(result);
+    if (!parsed.success) {
+      throw new Error('DB row does not match shared contract');
+    }
+    return User.rehydrate({
+      id: result.id,
+      name: result.name,
+      email: result.email,
+      createdAt: new Date(result.createdAt),
+      updatedAt: new Date(result.updatedAt),
+    })
   }
 }

@@ -5,6 +5,7 @@ import { CreateUserUseCase } from '../application/use-cases/create-user.use-case
 import { GetUserUseCase } from '../application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from '../application/use-cases/list-users.use-case';
 import { User } from '../domain/entities/user.entity';
+import { UpdateUserUseCase } from '../application/use-cases/update-user.use-case';
 
 @Controller()
 export class UserController {
@@ -12,7 +13,8 @@ export class UserController {
     private readonly createUser: CreateUserUseCase,
     private readonly getUser: GetUserUseCase,
     private readonly listUsers: ListUsersUseCase,
-  ) {}
+    private readonly updateUser: UpdateUserUseCase,
+  ) { }
 
   @TsRestHandler(userContract.createUser, { validateResponses: true })
   create() {
@@ -71,6 +73,17 @@ export class UserController {
         body: users.map((u) => this.toResponse(u)),
       };
     });
+  }
+
+  @TsRestHandler(userContract.updateUser, { validateResponses: true })
+  update() {
+    return tsRestHandler(userContract.updateUser, async ({ params, body }) => {
+      const user = await this.updateUser.execute(params.id, body);
+      return {
+        status: 200 as const,
+        body: this.toResponse(user),
+      }
+    })
   }
 
   private toResponse(user: User): UserDto {

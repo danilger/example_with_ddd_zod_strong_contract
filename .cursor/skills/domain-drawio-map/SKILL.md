@@ -1,11 +1,12 @@
 ---
 name: domain-drawio-map
 description: >-
-  Builds a draw.io XML map (.dio) for a bounded context: same swimlane nesting,
-  green DDD styling, Cursor file links, and import arrows as in
-  .cursor/skills/domain-drawio-map/example.domain-map.dio. Use when the user asks to build a domain map,
-  «построить карту домена», «карта домена», a DDD draw.io diagram for a module
-  under server/src, or to refresh .dio docs from imports.
+  Builds a draw.io XML map (.dio) for a bounded context: swimlane nesting,
+  green DDD styling, Cursor file links, curved labeled import edges, Contract
+  lane with dashed @repo/contract links — as in
+  .cursor/skills/domain-drawio-map/example.domain-map.dio. Use when the user asks
+  to build a domain map, «построить карту домена», «карта домена», a DDD draw.io
+  diagram for a module under server/src, or to refresh .dio docs from imports.
 disable-model-invocation: false
 ---
 
@@ -17,7 +18,9 @@ Produce **one** draw.io-compatible XML file (`.dio` or `.drawio`) that mirrors *
 
 `.cursor/skills/domain-drawio-map/example.domain-map.dio` (same folder as this skill; safe to copy into other projects).
 
-Do **not** invent a different layout (no alternate grouping, no extra top-level lanes unless the user explicitly asks).
+Live reference in this repo: `server/src/user/docs/.dio`.
+
+Do **not** invent a different layout (no alternate grouping, no extra top-level lanes beyond those listed below).
 
 ## When to run
 
@@ -49,9 +52,10 @@ All inner swimlanes are **children of the same ids and parents** as in `example.
    - **Value objects** `id="34"`
 5. Under **root** `parent="18"` (siblings of Application, **not** inside Application):
    - **Presentation** `id="20"`
+   - **Contract** `id="19"` — title `Contract (@repo/contract)`
    - **Infrastructure** `id="21"`
 
-Populate file nodes only from existing paths:
+Populate file nodes from existing paths:
 
 | Swimlane   | Scan folder |
 |-----------|-------------|
@@ -61,20 +65,21 @@ Populate file nodes only from existing paths:
 | Use cases | `application/use-cases/**/*.ts` |
 | Presentation | `presentation/**/*.ts` |
 | Infrastructure | `infrastructure/adapters/**/*.ts` |
+| Contract  | `contract/src/<context>.contract.ts` (monorepo root; one file per bounded context) |
 
 Sort files alphabetically within each swimlane for stable diffs.
 
 ## Styling (copy verbatim from reference)
 
-Open **`example.domain-map.dio`** next to this skill and copy **`style` attributes per swimlane role** (do not invent new colors or flags). At minimum, align with that file for:
+Open **`example.domain-map.dio`** and copy **`style` attributes per swimlane role** (do not invent new colors or flags). At minimum, align with that file for:
 
 - **Root 18** — empty title, `gradientColor=none`, rounded outer swimlane.
 - **Application 11** — gray gradient, no `flipH`.
 - **Domain 9, Entities 32, Value objects 34, Ports 22, Use cases 23** — same green header + `rounded=1;flipH=1;flipV=0` as in the file.
-- **Presentation 20, Infrastructure 21** — rounded, **no** `flipH`.
+- **Presentation 20, Contract 19, Infrastructure 21** — rounded, **no** `flipH`.
 - **File nodes** (`UserObject` → child `mxCell`): `text;whiteSpace=wrap;html=1;fontSize=25;fontColor=#4D9900;`
 
-**Geometry**: start from the reference file’s positions/sizes; adjust **only** what is needed so swimlanes fit all files (e.g. grow **Use cases** height by ~52px per extra row). Keep sibling positions consistent (Application right block, Presentation left, Infrastructure right).
+**Geometry**: start from the reference file’s positions/sizes; adjust **only** what is needed so swimlanes fit all files (e.g. grow **Use cases** height by ~52px per extra row, **Value objects** by ~52px per extra VO). Keep sibling positions consistent (Presentation left, Contract center-top, Infrastructure right, Application lower block).
 
 ## File nodes and Cursor links
 
@@ -90,26 +95,46 @@ For each TypeScript file in the table above:
 
 - `label` = basename only (e.g. `create-post.use-case.ts`).
 - `link` = `cursor://file/` + **absolute** path to the file in the user’s workspace (derive from the opened project root; on Windows keep `D:\...` style as in the reference).
+- Contract file id **41**; contract swimlane id **19**.
 
-Assign **unique** numeric string ids to every `UserObject` / edge. Reuse fixed structural ids (`0,1,9,11,18,20,21,22,23,32,34`) exactly; assign new ids for file nodes and edges that do not collide (continue from the next free integer in the file you write).
+Assign **unique** numeric string ids to every `UserObject` / edge. Reuse fixed structural ids (`0,1,9,11,18,19,20,21,22,23,32,34`) exactly; assign new ids for file nodes and edges that do not collide (continue from the next free integer — typically file nodes from `25`, `27+`, `35+`, `37+`, `38+`, `40+`, `41`; edges from `50`).
 
 ## Edges (imports)
 
-- For each pair of diagrammed files **A → B** such that **A** imports **B** via a relative path resolvable inside the bounded context root, add an `mxCell` edge with `edge="1"`, `parent="1"`, `source="<idA>"`, `target="<idB>"`.
-- **Direction**: from the file that **contains** the import **to** the **imported** file.
-- Ignore imports to packages outside the context (`@nestjs/*`, `@repo/*`, `drizzle-orm`, `../..` leaving the module, etc.) unless the user asks to include them.
+### Intra-context (relative imports inside `server/src/<context>/`)
 
-**Edge style** (match current reference):
+- For each pair of diagrammed files **A → B** such that **A** imports **B** via a relative path resolvable inside the bounded context root, add an edge.
+- **Direction**: importer → imported.
+- **Label** (`value` on the edge): comma-separated **imported symbol names** from that import statement (e.g. `User`, `CreateUserUseCase`, `PostRepositoryPort`). If several symbols come from one edge target file, list all (e.g. `userContract, UserDto`).
+- Ignore `@nestjs/*`, `drizzle-orm`, `../..` leaving the module, `crypto`, etc.
 
-`edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4D4D4D;endArrow=classic;endFill=1;curved=1;`
+**Intra-context edge style** (all curved, solid):
 
-Each edge:
+```
+edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;
+```
+
+### Contract (`@repo/contract`)
+
+- For each diagrammed file that imports from `@repo/contract`, add edge **importer →** contract file (`id="41"`).
+- **Label**: imported symbols (e.g. `CreateUserDto`, `UserSchema`, `postContract, PostDto`).
+- Same base style as above **plus** dashed line:
+
+```
+...;dashed=1;dashPattern=8 8;
+```
+
+Do **not** draw edges from contract back into the module.
+
+### Edge XML template
 
 ```xml
-<mxCell id="..." style="..." edge="1" parent="1" source="..." target="...">
+<mxCell id="..." value="ImportedSymbol" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;" edge="1" parent="1" source="<importerId>" target="<importedId>">
   <mxGeometry relative="1" as="geometry"/>
 </mxCell>
 ```
+
+Add `dashed=1;dashPattern=8 8;` to the style for contract edges only.
 
 ## Output
 
@@ -120,13 +145,16 @@ Each edge:
 
 Before finishing:
 
-- [ ] Same swimlane **titles** and **parent chain** as reference (`Application` contains Domain + Ports + Use cases; Presentation/Infrastructure are only under root).
+- [ ] Same swimlane **titles** and **parent chain** as reference (`Application` contains Domain + Ports + Use cases; Presentation / Contract / Infrastructure are only under root).
+- [ ] Contract lane with `contract/src/<context>.contract.ts` and dashed labeled edges from every consumer.
 - [ ] No `*.module.ts` on the canvas.
 - [ ] Every shown `.ts` has a working-looking `cursor://file/...` absolute path.
-- [ ] Edges only for intra-context relative imports; direction importer → imported.
+- [ ] Every edge is **curved** (`entityRelationEdgeStyle` + `curved=1`).
+- [ ] Every edge has a **label** (`value`) with imported symbol name(s), `fontColor=#4D4D4D` matching the line.
+- [ ] Intra-context edges: relative imports only, direction importer → imported.
 
-For edge cases (no `presentation` folder, empty `entities`), still emit the swimlanes with the same labels and ids; leave them visually minimal (small height) rather than deleting layers.
+For edge cases (no `presentation` folder, empty `entities`, no contract consumers), still emit the swimlanes with the same labels and ids; leave them visually minimal (small height) rather than deleting layers.
 
 ## Additional resources
 
-- [reference.md](reference.md) — bundled `example.domain-map.dio`, how to copy the skill, optional mirror in `server/src/post/docs/.dio`.
+- [reference.md](reference.md) — bundled `example.domain-map.dio`, edge styles, optional mirrors in `server/src/*/docs/.dio`.
