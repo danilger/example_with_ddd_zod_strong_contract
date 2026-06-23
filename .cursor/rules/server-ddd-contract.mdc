@@ -1,181 +1,149 @@
 ---
-description: Сервер NestJS — строгий DDD + явные гарантии инвариантов и контракт @repo/contract
+description: Сервер NestJS — contract-first + tactical DDD + CQRS (@nestjs/cqrs); эталон user/post
 globs: server/**/*.ts
 alwaysApply: false
 ---
 
 # Разработка в `server/`
 
-## Архитектура (DDD)
+Сервер — **DDD + CQRS + domain events** поверх `@nestjs/cqrs`.  
+Эталонные модули: `server/src/user/`, `server/src/post/`. Новый код **копирует их каркас**, не use case-ы и не `*Service`.
 
-Соблюдай направление зависимостей только внутрь:
+## Направление зависимостей
 
-`presentation → application → domain`
-
-Infrastructure реализует порты из `application`.  
-Domain и Application **не импортируют** NestJS, Drizzle, HTTP и `@repo/contract`.
-
-| Слой | Путь (пример) | Ответственность |
-|------|----------------|-----------------|
-| Domain | `**/domain/**` | Сущности, value objects, инварианты (локальные). Без DTO и ORM. |
-| Application | `**/application/**` | Use case-ы, orchestration, порты (`*Port`, токены `Symbol`). |
-| Infrastructure | `**/infrastructure/**` | Реализация портов (БД, API), маппинг ошибок, гарантии инвариантов. |
-| Presentation | `**/presentation/**` | Контроллеры ts-rest, вызов use case, маппинг домена → DTO. |
-
-**Запрещено:**
-- бизнес-логика в контроллере или репозитории  
-- прямые вызовы БД из application/domain  
-- импорт `@repo/contract` в `domain/`  
-
----
-
-## Инварианты (ключевой раздел)
-
-Инварианты делятся на 3 типа:
-
-### 1. Локальные (внутри агрегата)
-- реализуются в domain (entities, value objects)
-- не требуют внешних данных
-
-Пример:
-- формат email  
-- статус пользователя  
-
----
-
-### 2. С внешними зависимостями
-- формулируются в domain  
-- проверяются в application (через порты)  
-- гарантируются infrastructure  
-
-Пример:
-- пользователь существует  
-- пользователь активен  
-
----
-
-### 3. Глобальные (конкуренция)
-- НЕ могут быть гарантированы доменом  
-- обеспечиваются БД (constraints)  
-- application обязан обрабатывать ошибки  
-
-Пример:
-- уникальность email  
-- уникальные связи  
-
-⚠️ Любой инвариант, зависящий от времени или конкуренции — это инфраструктурная гарантия.
-
----
-
-## Строгий контракт
-
-- Единственный источник схем HTTP/DTO: `@repo/contract`
-- Не дублировать Zod-схемы в `server/`
-- Контракт гарантирует форму данных, но **не бизнес-правила**
-
-Контроллеры:
-- строго используют контракт  
-- могут включать `validateResponses: true`
-
----
-
-## Инфраструктура и БД
-
-- Данные из БД перед маппингом в домен проходят Zod-валидацию (`safeParse`)
-- При ошибке — явный fail (никаких silent fallback)
-
-- Схема БД должна быть согласована с контрактом:
-  - типы (`IsExact`)
-  - миграции обновляются синхронно
-
----
-
-## Контракты репозиториев
-
-Репозиторий — не просто доступ к данным.
-
-Он обязан:
-
-- сохранять агрегаты без нарушения инвариантов  
-- учитывать ограничения БД (unique, FK)  
-- маппить ошибки БД → доменные ошибки  
-
-Пример:
-
-- unique violation → `EmailAlreadyExistsError`
-
-⚠️ Репозиторий — часть механизма обеспечения консистентности.
-
----
-
-## Ошибки
-
-- БД ошибки НЕ должны протекать наружу  
-- Infrastructure маппит их в доменные ошибки  
-- Application обрабатывает доменные ошибки  
-
-Пример:
-
-- `23505` → `EmailAlreadyExistsError`
-
----
-
-## Pre-check (важно)
-
-Проверки вида:
-
-```ts
-repo.exists(email)
+```text
+presentation → application → domain
+infrastructure → application (реализует порты)
 ```
 
-используются только для:
+**Запрещено:** domain/application → Nest HTTP, Drizzle, `@repo/contract`.
 
-- UX  
-- раннего фейла  
+| Слой | Путь | Ответственность |
+|------|------|-----------------|
+| **Domain** | `**/domain/**` | `AggregateRoot`, VO, `*.domain-event.ts`, локальные инварианты |
+| **Application** | `**/application/**` | commands, queries, handlers, event-handlers, write/read **ports** |
+| **Infrastructure** | `**/infrastructure/**` | `*RepositoryAdapter` — Drizzle, `UserSchema.safeParse` |
+| **Presentation** | `**/presentation/**` | ts-rest controller, `CommandBus`/`QueryBus`, command/dto **adapters** |
 
-НО:
+## CQRS (обязательно)
 
-- не гарантируют инварианты  
-- не заменяют ограничения БД  
+- **Commands** — мутации: `*.command.ts` + `*.command.handler.ts`, `@CommandHandler`.
+- **Queries** — чтение: `*.query.ts` + `*.query.handler.ts`, `@QueryHandler`.
+- Модуль: `imports: [CqrsModule]`, все handlers в `providers`.
+- Контроллер **не** инжектит handlers напрямую — только `CommandBus` / `QueryBus`.
 
-⚠️ Любая логика, основанная только на pre-check — небезопасна.
+### Write handler
 
----
+- Принимает **Command** (не HTTP DTO).
+- Загружает/создаёт агрегат через **WriteRepositoryPort**.
+- Мутирует через методы агрегата (`updateName`, `markDeleted`, …).
+- `eventPublisher.mergeObjectContext(aggregate)` → `save` → `aggregate.commit()`.
 
-## Domain
+### Query handler
 
-- Домен описывает правила, но не гарантирует их полностью  
-- Домен не зависит от БД или внешних сервисов  
-- Value Objects могут инкапсулировать локальные проверки (например Email)
+- Принимает **Query**.
+- Читает **ReadModel** через **ReadRepositoryPort**.
+- **Не** загружает `AggregateRoot` для простого GET/list.
 
-Пример:
+## Порты репозиториев (write / read)
 
-```ts
-class Email {
-  static create(value: string) {
-    // локальная валидация (можно использовать zod)
-  }
+```typescript
+// Write — агрегат
+interface XWriteRepositoryPort {
+  save(aggregate: X): Promise<void>;
+  loadById(id: string): Promise<X | null>;
+  delete(id: string): Promise<void>;
+  // loadByEmail и т.п. — только если нужно для application-правил
+}
+
+// Read — плоская модель для API
+interface XReadRepositoryPort {
+  findById(id: string): Promise<XReadModel | null>;
+  findAll(): Promise<XReadModel[]>;
 }
 ```
 
----
+- Один `DrizzleXRepositoryAdapter` может реализовать **оба** порта (`useExisting` в module).
+- **Запрещён** `update(id, dto)` в порте — update только через load → aggregate method → save.
 
-## Тестирование (обязательно)
+## Domain events
 
-Каждый инвариант должен быть покрыт:
+- События в `domain/events/*.domain-event.ts`.
+- Агрегат: `apply(new XDomainEvent(...))` в методах мутации.
+- Подписчики: `application/event-handlers/*.domain-event.handler.ts`, `@EventsHandler`.
+- После persist: `commit()` публикует события в `EventBus`.
 
-- Domain tests → локальные правила  
-- Application tests → сценарии  
-- Integration tests → с БД  
+## Контракт `@repo/contract` — только на границе
 
-⚠️ Изменение инфраструктуры без падения тестов = нарушение архитектуры
+| Разрешено | Запрещено |
+|-----------|-----------|
+| `presentation/*-command.adapter.ts` — DTO → Command | import contract в `application/commands/*.handler.ts` |
+| `presentation/*-dto.adapter.ts` — ReadModel/Aggregate → DTO | import contract в `domain/**` |
+| `infrastructure/**` — `*Schema.safeParse` | DTO в `*WriteRepositoryPort` |
 
----
+## Presentation
 
-## Практический чеклист перед PR
+- `@TsRestHandler(..., { validateResponses: true })`.
+- Create/update/delete: `commandBus.execute(adapter.adapt(body))`.
+- Get/list: `queryBus.execute(new GetXQuery(...))`.
+- Маппинг ответа: `*DtoAdapter.adaptFromAggregate` (write) / `adaptFromReadModel` (read).
 
-1. Есть ли бизнес-логика вне domain/application?  
-2. Все ли API типы из `@repo/contract`?  
-3. Репозиторий валидирует данные и маппит ошибки?  
-4. Есть ли DB constraint для глобальных инвариантов?  
-5. Есть ли тест на критичные инварианты?  
+## GoF-нейминг (см. also `gof-naming-contract.mdc`)
+
+- Command: `create-user.command.ts`, `CreateUserCommand`
+- Handler: `create-user.command.handler.ts`, `CreateUserCommandHandler`
+- Adapter (DTO↔Command): `create-user-command.adapter.ts`, `CreateUserCommandAdapter`
+- Adapter (repo): `drizzle-user.repository.adapter.ts`, `DrizzleUserRepositoryAdapter`
+- Port: `user.write.repository.port.ts`, `UserWriteRepositoryPort`
+
+## Инварианты
+
+### Локальные — в domain (VO, методы агрегата)
+
+### С внешними данными — в command handler через write port
+
+Пример: уникальность email — `loadByEmail` в handler, не в Zod.
+
+### Глобальные / конкуренция — БД (unique) + обработка ошибок в infra/application
+
+Pre-check (`loadByEmail`) — UX, не замена constraint.
+
+## Infrastructure и БД
+
+- `safeParse` строк БД через схемы из `@repo/contract`.
+- `server/src/db/schema.ts`: compile-time `IsExact` row ↔ contract schema.
+- Ошибки БД не протекают наружу как raw SQL — маппинг в доменные/HTTP ошибки.
+
+## Модуль Nest (`<slug>.module.ts`)
+
+```typescript
+@Module({
+  imports: [CqrsModule],
+  controllers: [...],
+  providers: [
+    ...CommandHandlers,
+    ...QueryHandlers,
+    ...EventHandlers,
+    ...Adapters,
+    DrizzleXRepositoryAdapter,
+    { provide: X_WRITE_REPOSITORY, useExisting: DrizzleXRepositoryAdapter },
+    { provide: X_READ_REPOSITORY, useExisting: DrizzleXRepositoryAdapter },
+  ],
+})
+```
+
+## Запрещено
+
+- `application/use-cases/` — устаревший паттерн в этом стартере.
+- Единый `XRepositoryPort` без write/read split для новых модулей.
+- Бизнес-логика в контроллере или drizzle-adapter (кроме persist/validate/map).
+- Прямой `UserSchema` / `CreateUserDto` в command handler.
+
+## Чеклист перед завершением
+
+1. Новый код повторяет структуру `user` или `post`?
+2. Write идёт через агрегат + events + commit?
+3. Query не трогает write port?
+4. Application/domain без `@repo/contract`?
+5. Карта `docs/.dio` обновлена при существенных изменениях модуля?
+6. `npm run build -w server` зелёный?

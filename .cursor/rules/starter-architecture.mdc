@@ -1,0 +1,89 @@
+---
+description: Стартер-проект — обязательная архитектура-шаблон для всех изменений; агент не отклоняется от неё
+alwaysApply: true
+---
+
+# Стартер: contract-first + tactical DDD + CQRS
+
+Этот репозиторий — **начальная точка входа и шаблон** для дальнейшей разработки.  
+Агент **обязан** расширять проект **в том же стиле**, что `user` и `post`, а не упрощать до CRUD, «сервисов» или схемо-центричного кода.
+
+Эталон: `README.md` (раздел «DDD и CQRS на сервере»), `server/src/user/`, `server/src/post/`, карты `server/src/*/docs/.dio`.
+
+## Нельзя (жёстко)
+
+- Вводить `*Service`, `*UseCase`, прямые вызовы репозитория из контроллера.
+- Импортировать `@repo/contract` в `domain/` и `application/`.
+- Мутировать состояние вне методов **AggregateRoot** (обход агрегата через `repository.update(dto)`).
+- Смешивать write и read: query handler не вызывает `save` / `loadById` агрегата; command handler не возвращает read model как основной путь.
+- Добавлять bounded context без слоёв DDD и без контракта в `contract/`.
+- Ломать GoF-нейминг из правила `gof-naming-contract.mdc` (файлы `*.command.ts`, `*.command.handler.ts`, `*.repository.adapter.ts` и т.д.).
+
+## Обязательный каркас нового bounded context `<slug>`
+
+```text
+contract/src/<slug>.contract.ts          # ts-rest + Zod, strictStatusCodes
+server/src/<slug>/
+  domain/
+    entities/<slug>.entity.ts            # extends AggregateRoot (@nestjs/cqrs)
+    events/*.domain-event.ts
+    value-objects/*.vo.ts
+  application/
+    commands/*.command.ts + *.command.handler.ts
+    queries/*.query.ts + *.query.handler.ts
+    event-handlers/*.domain-event.handler.ts
+    ports/<slug>.write.repository.port.ts
+    ports/<slug>.read.repository.port.ts
+  infrastructure/adapters/drizzle-<slug>.repository.adapter.ts
+  presentation/
+    <slug>.controller.ts                 # CommandBus / QueryBus
+    *-command.adapter.ts                   # DTO → Command (контракт здесь)
+    *-dto.adapter.ts                       # Aggregate / ReadModel → DTO
+  docs/.dio                                # карта домена (skill domain-drawio-map)
+  <slug>.module.ts                         # CqrsModule, handlers, useExisting для портов
+```
+
+## Write / Query / Events (обязательный поток)
+
+**Write:**
+
+```text
+Controller → *CommandAdapter → CommandBus → CommandHandler
+  → eventPublisher.mergeObjectContext(Aggregate.method())
+  → WriteRepository.save(aggregate)
+  → aggregate.commit() → EventBus → @EventsHandler
+```
+
+**Query:**
+
+```text
+Controller → QueryBus → QueryHandler → ReadRepository → ReadModel → *DtoAdapter → HTTP
+```
+
+## Контракт vs домен
+
+| Где | `@repo/contract` |
+|-----|------------------|
+| `presentation/` | да — контроллер, command/dto adapters |
+| `infrastructure/` | да — `*Schema.safeParse`, compile-time в `db/schema.ts` |
+| `application/`, `domain/` | **нет** — только свои Command, Query, ReadModel, Entity |
+
+## Новая фича: порядок работ
+
+1. Контракт в `contract/` (или согласование по skill `ddd-onboarding`).
+2. Domain (агрегат, VO, events, инварианты).
+3. Application (commands/queries/handlers, write/read ports).
+4. Infrastructure (adapter implements оба порта при одной БД).
+5. Presentation (adapters + controller на bus).
+6. Обновить `docs/.dio` и при необходимости `README.md`.
+
+## Вне scope стартера (не добавлять без явного запроса)
+
+Event Sourcing, отдельные read-таблицы, sagas, outbox, domain services — только по отдельной задаче пользователя.
+
+## Перед завершением задачи
+
+1. Структура совпадает с `user` / `post`?
+2. Application/domain без `@repo/contract`?
+3. Имена файлов отражают GoF-роль (command, adapter, handler)?
+4. `npm run build` в затронутых workspace проходит?

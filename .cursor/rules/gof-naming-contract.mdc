@@ -1,5 +1,5 @@
 ---
-description: Строгое правило GoF-паттернов и явного нейминга
+description: GoF-паттерны и явный нейминг; обязательно для всего стартера включая CQRS/DDD
 globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 alwaysApply: true
 ---
@@ -7,29 +7,53 @@ alwaysApply: true
 # GoF: строгое применение и явный нейминг
 
 ## Обязательность
-- Это правило критически важно и обязательно для всего проекта.
-- Агент обязан соблюдать его при любом добавлении и изменении кода.
+
+- Правило обязательно для **всего** стартера, включая CQRS и DDD-слои.
+- Агент соблюдает его при любом добавлении и изменении кода.
+- Архитектурный каркас — в `starter-architecture.mdc`; нейминг не должен ему противоречить.
 
 ## Применение GoF
-- По умолчанию стремиться применять GoF-паттерны для элементарных логических узлов системы: фабрики, стратегии, команды, адаптеры, фасады, синглтоны и т.д.
-- Цель — максимально стандартизированные базовые блоки, по имени и роли которых сразу понятен смысл элемента без чтения реализации.
-- Паттерн выбирать по фактической ответственности узла, а не «для красоты»; если узел не укладывается ни в один GoF-паттерн — не навешивать паттерн-нейминг (см. «Контроль качества»).
-- При проектировании нового кода сначала искать подходящий GoF-паттерн; отказ от паттерна допустим только с явным обоснованием (простой value object, чистая функция без роли узла и т.п.).
+
+- Command, Query, Adapter, Handler, Port — выбирать по **фактической** роли узла.
+- Не навешивать паттерн в имени, если паттерн не реализован.
+- Value object, чистая domain-event struct — паттерн-суффикс в имени файла не обязателен.
+
+## Нейминг в server (CQRS + DDD стarter)
+
+| Роль | Класс / интерфейс | Файл |
+|------|-------------------|------|
+| Command | `CreateUserCommand` | `create-user.command.ts` |
+| Command handler | `CreateUserCommandHandler` | `create-user.command.handler.ts` |
+| Query | `GetUserQuery` | `get-user.query.ts` |
+| Query handler | `GetUserQueryHandler` | `get-user.query.handler.ts` |
+| Domain event | `UserCreatedDomainEvent` | `user-created.domain-event.ts` |
+| Event handler | `UserCreatedDomainEventHandler` | `user-created.domain-event.handler.ts` |
+| Write port | `UserWriteRepositoryPort` | `user.write.repository.port.ts` |
+| Read port | `UserReadRepositoryPort` | `user.read.repository.port.ts` |
+| Repository adapter | `DrizzleUserRepositoryAdapter` | `drizzle-user.repository.adapter.ts` |
+| Command adapter (DTO→Command) | `CreateUserCommandAdapter` | `create-user-command.adapter.ts` |
+| DTO adapter | `UserDtoAdapter` | `user-dto.adapter.ts` |
 
 ## Явный нейминг (код)
-- Если паттерн реально реализован, его название обязательно указывать в имени:
-  - классов,
-  - функций,
-  - объектов,
-  - переменных,
-  - типов и интерфейсов.
-- Примеры: `UserSingleton`, `PaymentFactory`, `DiscountStrategy`, `BillingFacade`, `CreateOrderCommand`, `LegacyAuthAdapter`.
-- Запрещено использовать паттерн в имени, если паттерн фактически не реализован.
+
+- Паттерн в имени класса/типа, если паттерн реализован: `CreateUserCommand`, `DrizzleUserRepositoryAdapter`.
+- Запрещено: `UserService`, `UserUseCase`, `UserRepository` без `.adapter` / `.port` где роль — порт или адаптер.
 
 ## Явный нейминг (файлы)
-- Если в файле реализован GoF-паттерн, имя файла обязано явно содержать название паттерна.
-- Примеры: `user.singleton.ts`, `payment.factory.ts`, `discount.strategy.ts`, `billing.facade.ts`, `create-order.command.ts`.
+
+- Command: `*.command.ts`
+- Handler: `*.command.handler.ts`, `*.query.handler.ts`, `*.domain-event.handler.ts`
+- Adapter: `*.adapter.ts` (в имени или суффиксе: `repository.adapter`, `command.adapter`, `dto.adapter`)
+- Port: `*.repository.port.ts` с префиксом `read` / `write` при CQRS
+
+## Запрещённые имена в новом коде стартера
+
+- `*UseCase`, `use-cases/` — заменены на commands/queries.
+- `*Service` для application-логики bounded context — использовать handlers.
+- `*Repository` без `.adapter` или `.port` в имени файла.
 
 ## Контроль качества
-- Нейминг должен быть одновременно доменно-понятным и паттерн-явным.
-- Ложный паттерн-нейминг запрещен.
+
+- Доменно-понятно **и** роль паттерна ясна из имени.
+- Ложный паттерн-нейминг запрещён.
+- Новый модуль должен читаться так же, как `user` / `post`.
