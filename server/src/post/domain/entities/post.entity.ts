@@ -1,6 +1,8 @@
+import { AggregateRoot } from '@nestjs/cqrs';
+import { PostCreatedDomainEvent } from '../events/post-created.domain-event';
 import { PostId } from '../value-objects/post-id.vo';
 
-export class Post {
+export class Post extends AggregateRoot {
   private updatedAt: Date;
 
   private constructor(
@@ -9,6 +11,7 @@ export class Post {
     private content: string,
     private readonly createdAt: Date,
   ) {
+    super();
     this.updatedAt = createdAt;
   }
 
@@ -19,7 +22,24 @@ export class Post {
     if (!content || content.trim().length < 1) {
       throw new Error('Content is required');
     }
-    return new Post(new PostId(), title.trim(), content.trim(), new Date());
+
+    const postId = new PostId();
+    const createdAt = new Date();
+    const post = new Post(
+      postId,
+      title.trim(),
+      content.trim(),
+      createdAt,
+    );
+    post.apply(
+      new PostCreatedDomainEvent(
+        postId.getValue(),
+        title.trim(),
+        content.trim(),
+        createdAt,
+      ),
+    );
+    return post;
   }
 
   static rehydrate(props: {
@@ -57,5 +77,9 @@ export class Post {
 
   getUpdatedAt(): Date {
     return this.updatedAt;
+  }
+
+  protected onPostCreatedDomainEvent(_event: PostCreatedDomainEvent): void {
+    // Состояние уже задано в create(); обработчик нужен для будущего replay из event store.
   }
 }

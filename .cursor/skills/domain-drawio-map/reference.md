@@ -9,7 +9,7 @@
 - **Contract** lane (`id="19"`) with `contract/src/post.contract.ts` (`id="41"`)
 - **Curved** import edges (`entityRelationEdgeStyle`, `curved=1`)
 - **Labels** on every edge: imported symbol name(s), `fontColor=#4D4D4D`
-- **Dashed** edges (`dashed=1;dashPattern=8 8`) from module files to contract only
+- **Dashed** edges (`dashed=1;dashPattern=8 8`) from contract file to module consumers (contract → importer)
 - No `*.module.ts`
 
 When moving the skill to another repo, copy the whole directory:
@@ -60,8 +60,14 @@ edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor
 
 **Label:** `value="<Symbol>"` or `value="SymA, SymB"` on the `mxCell` edge; symbols from the actual `import { ... }` in the source file.
 
+## Edge direction
+
+Arrow **from exported module to importing file** (`source` = imported file id, `target` = importer file id). Example: if `create-post.command.handler.ts` imports `Post` from `post.entity.ts`, draw `post.entity.ts` → `create-post.command.handler.ts`.
+
+Contract edges: `contract/src/<context>.contract.ts` → consumer (dashed).
+
 ## What to scan for edges
 
-1. **Relative imports** within `server/src/<context>/` → solid edge, label = imported bindings.
-2. **`from '@repo/contract'`** in presentation / application / infrastructure files on the diagram → dashed edge to `contract/src/<context>.contract.ts`.
+1. **Relative imports** within `server/src/<context>/` → solid edge, label = imported bindings, direction imported → importer.
+2. **`from '@repo/contract'`** in presentation / application / infrastructure files on the diagram → dashed edge from `contract/src/<context>.contract.ts` to consumer.
 3. Skip `@nestjs/*`, `drizzle-orm`, paths leaving the bounded context (except contract).

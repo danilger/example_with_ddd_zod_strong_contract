@@ -103,8 +103,8 @@ Assign **unique** numeric string ids to every `UserObject` / edge. Reuse fixed s
 
 ### Intra-context (relative imports inside `server/src/<context>/`)
 
-- For each pair of diagrammed files **A → B** such that **A** imports **B** via a relative path resolvable inside the bounded context root, add an edge.
-- **Direction**: importer → imported.
+- For each pair of diagrammed files **A** imports **B** via a relative path resolvable inside the bounded context root, add an edge.
+- **Direction**: **imported → importer** (arrow **from** the file that exports the symbol **to** the file that imports it). Reading the arrow: «откуда импортируем → куда импортируем».
 - **Label** (`value` on the edge): comma-separated **imported symbol names** from that import statement (e.g. `User`, `CreateUserUseCase`, `PostRepositoryPort`). If several symbols come from one edge target file, list all (e.g. `userContract, UserDto`).
 - Ignore `@nestjs/*`, `drizzle-orm`, `../..` leaving the module, `crypto`, etc.
 
@@ -116,7 +116,7 @@ edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor
 
 ### Contract (`@repo/contract`)
 
-- For each diagrammed file that imports from `@repo/contract`, add edge **importer →** contract file (`id="41"`).
+- For each diagrammed file that imports from `@repo/contract`, add edge **contract file (`id="41"`) → importer** (dashed arrow from contract to consumer).
 - **Label**: imported symbols (e.g. `CreateUserDto`, `UserSchema`, `postContract, PostDto`).
 - Same base style as above **plus** dashed line:
 
@@ -124,12 +124,12 @@ edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor
 ...;dashed=1;dashPattern=8 8;
 ```
 
-Do **not** draw edges from contract back into the module.
+Do **not** draw edges from consumers back to contract (only **contract → consumer**).
 
 ### Edge XML template
 
 ```xml
-<mxCell id="..." value="ImportedSymbol" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;" edge="1" parent="1" source="<importerId>" target="<importedId>">
+<mxCell id="..." value="ImportedSymbol" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;labelBackgroundColor=none;endArrow=classic;endFill=1;curved=1;" edge="1" parent="1" source="<importedId>" target="<importerId>">
   <mxGeometry relative="1" as="geometry"/>
 </mxCell>
 ```
@@ -146,12 +146,12 @@ Add `dashed=1;dashPattern=8 8;` to the style for contract edges only.
 Before finishing:
 
 - [ ] Same swimlane **titles** and **parent chain** as reference (`Application` contains Domain + Ports + Use cases; Presentation / Contract / Infrastructure are only under root).
-- [ ] Contract lane with `contract/src/<context>.contract.ts` and dashed labeled edges from every consumer.
+- [ ] Contract lane with `contract/src/<context>.contract.ts` and dashed labeled edges **to** every consumer (contract → importer).
 - [ ] No `*.module.ts` on the canvas.
 - [ ] Every shown `.ts` has a working-looking `cursor://file/...` absolute path.
 - [ ] Every edge is **curved** (`entityRelationEdgeStyle` + `curved=1`).
 - [ ] Every edge has a **label** (`value`) with imported symbol name(s), `fontColor=#4D4D4D` matching the line.
-- [ ] Intra-context edges: relative imports only, direction importer → imported.
+- [ ] Intra-context edges: relative imports only, direction imported → importer (from export source to import consumer).
 
 For edge cases (no `presentation` folder, empty `entities`, no contract consumers), still emit the swimlanes with the same labels and ids; leave them visually minimal (small height) rather than deleting layers.
 

@@ -1,22 +1,34 @@
 import { Module } from '@nestjs/common';
-import { CreatePostUseCase } from './application/use-cases/create-post.use-case';
-import { GetPostUseCase } from './application/use-cases/get-post.use-case';
-import { ListPostsUseCase } from './application/use-cases/list-posts.use-case';
-import { POST_REPOSITORY } from './application/ports/post.repository.port';
+import { CqrsModule } from '@nestjs/cqrs';
+import { CreatePostCommandHandler } from './application/commands/create-post.command.handler';
+import { PostCreatedDomainEventHandler } from './application/event-handlers/post-created.domain-event.handler';
+import { POST_READ_REPOSITORY } from './application/ports/post.read.repository.port';
+import { POST_WRITE_REPOSITORY } from './application/ports/post.write.repository.port';
+import { GetPostQueryHandler } from './application/queries/get-post.query.handler';
+import { ListPostsQueryHandler } from './application/queries/list-posts.query.handler';
 import { DrizzlePostRepositoryAdapter } from './infrastructure/adapters/drizzle-post.repository.adapter';
+import { CreatePostCommandAdapter } from './presentation/create-post-command.adapter';
 import { PostController } from './presentation/post.controller';
 import { PostDtoAdapter } from './presentation/post-dto.adapter';
 
 @Module({
+  imports: [CqrsModule],
   controllers: [PostController],
   providers: [
-    CreatePostUseCase,
-    GetPostUseCase,
-    ListPostsUseCase,
+    CreatePostCommandHandler,
+    GetPostQueryHandler,
+    ListPostsQueryHandler,
+    PostCreatedDomainEventHandler,
+    CreatePostCommandAdapter,
     PostDtoAdapter,
+    DrizzlePostRepositoryAdapter,
     {
-      provide: POST_REPOSITORY,
-      useClass: DrizzlePostRepositoryAdapter,
+      provide: POST_WRITE_REPOSITORY,
+      useExisting: DrizzlePostRepositoryAdapter,
+    },
+    {
+      provide: POST_READ_REPOSITORY,
+      useExisting: DrizzlePostRepositoryAdapter,
     },
   ],
 })

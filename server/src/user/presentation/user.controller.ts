@@ -1,21 +1,22 @@
 import { Controller, NotFoundException } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest';
 import { userContract } from '@repo/contract';
-import { CreateUserUseCase } from '../application/use-cases/create-user.use-case';
-import { GetUserUseCase } from '../application/use-cases/get-user.use-case';
-import { ListUsersUseCase } from '../application/use-cases/list-users.use-case';
-import { UpdateUserUseCase } from '../application/use-cases/update-user.use-case';
-import { DeleteUserUseCase } from '../application/use-cases/delete-user.use-case';
+import { UserReadModel } from '../application/ports/user.read.repository.port';
+import { DeleteUserCommand } from '../application/commands/delete-user.command';
+import { GetUserQuery } from '../application/queries/get-user.query';
+import { ListUsersQuery } from '../application/queries/list-users.query';
+import { CreateUserCommandAdapter } from './create-user-command.adapter';
+import { UpdateUserCommandAdapter } from './update-user-command.adapter';
 import { UserDtoAdapter } from './user-dto.adapter';
 
 @Controller()
 export class UserController {
   constructor(
-    private readonly createUser: CreateUserUseCase,
-    private readonly getUser: GetUserUseCase,
-    private readonly listUsers: ListUsersUseCase,
-    private readonly updateUser: UpdateUserUseCase,
-    private readonly deleteUser: DeleteUserUseCase,
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+    private readonly createUserCommandAdapter: CreateUserCommandAdapter,
+    private readonly updateUserCommandAdapter: UpdateUserCommandAdapter,
     private readonly userDtoAdapter: UserDtoAdapter,
   ) {}
 
@@ -23,10 +24,12 @@ export class UserController {
   create() {
     return tsRestHandler(userContract.createUser, async ({ body }) => {
       try {
-        const user = await this.createUser.execute(body);
+        const user = await this.commandBus.execute(
+          this.createUserCommandAdapter.adapt(body),
+        );
         return {
           status: 201 as const,
-          body: this.userDtoAdapter.adapt(user),
+          body: this.userDtoAdapter.adaptFromAggregate(user),
         };
       } catch (error) {
         if (error instanceof Error && error.message.includes('already exists')) {
@@ -47,10 +50,12 @@ export class UserController {
   get() {
     return tsRestHandler(userContract.getUser, async ({ params }) => {
       try {
-        const user = await this.getUser.execute(params.id);
+        const readModel = await this.queryBus.execute(
+          new GetUserQuery(params.id),
+        );
         return {
           status: 200 as const,
-          body: this.userDtoAdapter.adapt(user),
+          body: this.userDtoAdapter.adaptFromReadModel(readModel),
         };
       } catch (error) {
         if (error instanceof NotFoundException) {
@@ -70,10 +75,15 @@ export class UserController {
   @TsRestHandler(userContract.listUsers, { validateResponses: true })
   list() {
     return tsRestHandler(userContract.listUsers, async () => {
-      const users = await this.listUsers.execute();
+      const readModels = await this.queryBus.execute<
+        ListUsersQuery,
+        UserReadModel[]
+      >(new ListUsersQuery());
       return {
         status: 200 as const,
-        body: users.map((u) => this.userDtoAdapter.adapt(u)),
+        body: readModels.map((model) =>
+          this.userDtoAdapter.adaptFromReadModel(model),
+        ),
       };
     });
   }
@@ -82,10 +92,12 @@ export class UserController {
   update() {
     return tsRestHandler(userContract.updateUser, async ({ params, body }) => {
       try {
-        const user = await this.updateUser.execute(params.id, body);
+        const user = await this.commandBus.execute(
+          this.updateUserCommandAdapter.adapt(params.id, body),
+        );
         return {
           status: 200 as const,
-          body: this.userDtoAdapter.adapt(user),
+          body: this.userDtoAdapter.adaptFromAggregate(user),
         };
       } catch (error) {
         if (error instanceof NotFoundException) {
@@ -106,7 +118,7 @@ export class UserController {
   delete() {
     return tsRestHandler(userContract.deleteUser, async ({ params }) => {
       try {
-        await this.deleteUser.execute(params.id);
+        await this.commandBus.execute(new DeleteUserCommand(params.id));
         return {
           status: 204 as const,
           body: null,

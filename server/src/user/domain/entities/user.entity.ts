@@ -1,7 +1,11 @@
+import { AggregateRoot } from '@nestjs/cqrs';
+import { UserCreatedDomainEvent } from '../events/user-created.domain-event';
+import { UserDeletedDomainEvent } from '../events/user-deleted.domain-event';
+import { UserNameUpdatedDomainEvent } from '../events/user-name-updated.domain-event';
 import { Email } from '../value-objects/email.vo';
 import { UserId } from '../value-objects/user-id.vo';
 
-export class User {
+export class User extends AggregateRoot {
   private updatedAt: Date;
 
   private constructor(
@@ -10,6 +14,7 @@ export class User {
     private email: Email,
     private readonly createdAt: Date,
   ) {
+    super();
     this.updatedAt = createdAt;
   }
 
@@ -17,7 +22,25 @@ export class User {
     if (!name || name.trim().length < 2) {
       throw new Error('Name must be at least 2 chars');
     }
-    return new User(new UserId(), name.trim(), new Email(email), new Date());
+
+    const userId = new UserId();
+    const createdAt = new Date();
+    const normalizedName = name.trim();
+    const user = new User(
+      userId,
+      normalizedName,
+      new Email(email),
+      createdAt,
+    );
+    user.apply(
+      new UserCreatedDomainEvent(
+        userId.getValue(),
+        normalizedName,
+        new Email(email).getValue(),
+        createdAt,
+      ),
+    );
+    return user;
   }
 
   static rehydrate(props: {
@@ -61,7 +84,33 @@ export class User {
     if (!name || name.trim().length < 2) {
       throw new Error('Name must be at least 2 chars');
     }
-    this.name = name.trim();
+    const normalizedName = name.trim();
+    this.name = normalizedName;
     this.updatedAt = new Date();
+    this.apply(
+      new UserNameUpdatedDomainEvent(
+        this.id.getValue(),
+        normalizedName,
+        this.updatedAt,
+      ),
+    );
+  }
+
+  markDeleted(): void {
+    this.apply(
+      new UserDeletedDomainEvent(this.id.getValue(), new Date()),
+    );
+  }
+
+  protected onUserCreatedDomainEvent(_event: UserCreatedDomainEvent): void {
+    // Состояние уже задано в create(); обработчик нужен для будущего replay из event store.
+  }
+
+  protected onUserNameUpdatedDomainEvent(_event: UserNameUpdatedDomainEvent): void {
+    // Состояние уже обновлено в updateName().
+  }
+
+  protected onUserDeletedDomainEvent(_event: UserDeletedDomainEvent): void {
+    // Физическое удаление выполняет write repository.
   }
 }

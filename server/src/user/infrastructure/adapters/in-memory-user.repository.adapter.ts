@@ -1,45 +1,58 @@
 import { Injectable } from '@nestjs/common';
-import { UpdateUserDto } from '@repo/contract';
-import { UserRepositoryPort } from '../../application/ports/user.repository.port';
+import {
+  UserReadModel,
+  UserReadRepositoryPort,
+} from '../../application/ports/user.read.repository.port';
+import {
+  UserWriteRepositoryPort,
+} from '../../application/ports/user.write.repository.port';
 import { User } from '../../domain/entities/user.entity';
 
 @Injectable()
-export class InMemoryUserRepositoryAdapter implements UserRepositoryPort {
+export class InMemoryUserRepositoryAdapter
+  implements UserWriteRepositoryPort, UserReadRepositoryPort
+{
   private readonly store = new Map<string, User>();
 
-  save(user: User): User {
+  async save(user: User): Promise<void> {
     this.store.set(user.getId().getValue(), user);
-    return user;
   }
 
-  findById(id: string): User | null {
+  async loadById(id: string): Promise<User | null> {
     return this.store.get(id) ?? null;
   }
 
-  findByEmail(email: string): User | null {
+  async loadByEmail(email: string): Promise<User | null> {
     return (
       Array.from(this.store.values()).find(
-        (u) => u.getEmail().getValue() === email,
+        (user) => user.getEmail().getValue() === email,
       ) ?? null
     );
   }
 
-  findAll(): User[] {
-    return Array.from(this.store.values());
-  }
-
-  update(id: string, dto: UpdateUserDto): User {
-    const user = this.store.get(id);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    user.updateName(dto.name);
-    return user;
-  }
-
-  delete(id: string): void {
+  async delete(id: string): Promise<void> {
     if (!this.store.delete(id)) {
       throw new Error('User not found');
     }
+  }
+
+  async findById(id: string): Promise<UserReadModel | null> {
+    const user = this.store.get(id);
+    if (!user) return null;
+    return this.toReadModel(user);
+  }
+
+  async findAll(): Promise<UserReadModel[]> {
+    return Array.from(this.store.values()).map((user) => this.toReadModel(user));
+  }
+
+  private toReadModel(user: User): UserReadModel {
+    return {
+      id: user.getId().getValue(),
+      name: user.getName(),
+      email: user.getEmail().getValue(),
+      createdAt: user.getCreatedAt().toISOString(),
+      updatedAt: user.getUpdatedAt().toISOString(),
+    };
   }
 }
