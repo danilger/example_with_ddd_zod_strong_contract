@@ -30,9 +30,9 @@
 
 ### Карта домена (для чтения и навигации)
 
-Скилл [`.cursor/skills/domain-drawio-map`](.cursor/skills/domain-drawio-map) строит **draw.io-диаграмму** (`.dio`) по структуре модуля в `server/src/<context>/`: слои Application (ports, use cases), Domain (entities, value objects), Presentation, Infrastructure, со ссылками на файлы. Это даёт **визуальное представление поддомена** и упрощает обзор кода после онбординга или при ревью.
+Скилл [`.cursor/skills/domain-drawio-map`](.cursor/skills/domain-drawio-map) строит **draw.io-диаграмму** (`.dio`) по структуре модуля в `server/src/<context>/`: слои Application (ports, commands/queries, event handlers), Domain (entities, value objects, events), Presentation, Infrastructure, со ссылками на файлы. Готовые карты: `server/src/user/docs/.dio`, `server/src/post/docs/.dio`.
 
-**После создания карты в первую очередь проверьте направления зависимостей** по стрелкам импортов: они должны идти **только внутрь** (`presentation → application → domain`; infrastructure реализует порты application). На карте **не должно быть** обратных связей — например, стрелки от **сущности или value object** к **infrastructure**, от **domain** к **presentation**, от **application** к **infrastructure** (кроме зависимости use case от порта). Такие стрелки — сигнал нарушения DDD и повод исправить код, а не «норма» диаграммы.
+**После создания карты в первую очередь проверьте направления зависимостей** по стрелкам импортов: они должны идти **только внутрь** (`presentation → application → domain`; infrastructure реализует порты application). На карте **не должно быть** обратных связей — например, стрелки от **сущности или value object** к **infrastructure**, от **domain** к **presentation**, от **application** к **infrastructure** (кроме зависимости handler от порта). Пунктир к `@repo/contract` — только с presentation/infrastructure. Такие стрелки — сигнал нарушения DDD и повод исправить код, а не «норма» диаграммы.
 
 Запросы: «построить карту домена», «карта домена», «обнови .dio по импортам».
 
@@ -46,8 +46,10 @@
 
 ## Что реализовано
 
-- Домен **`user`**: `createUser`, `getUser`, `listUsers`
+- Домен **`user`**: `createUser`, `getUser`, `listUsers`, `updateUser`, `deleteUser`
 - Домен **`post`**: `createPost`, `getPost`, `listPosts`
+- На сервере оба контекста: **DDD-слои**, **CQRS** (`@nestjs/cqrs`), **AggregateRoot + domain events**, раздельные **write/read** порты репозиториев
+- Контракт `@repo/contract` на границе: presentation-адаптеры (command/dto) и валидация строк БД в infrastructure
 
 ## Требования
 
@@ -115,27 +117,57 @@ npx drizzle-kit push
 
 После изменения `schema.ts` сгенерируйте новую миграцию и обновите `drizzle/meta/_journal.json` при необходимости (или используйте `generate`, когда окружение `drizzle-kit` корректно подхватывает зависимости).
 
-## DDD на сервере
+## DDD и CQRS на сервере
 
-Сервер устроен по слоям DDD с направлением зависимостей **только внутрь**:
+Сервер устроен по слоям DDD с направлением зависимостей **только внутрь**. Оба bounded context (`user`, `post`) используют одинаковый каркас.
 
-- **Presentation** (`server/src/**/presentation/**`): HTTP-слой, контроллеры ts-rest (`@ts-rest/nest`)
-- **Application** (`server/src/**/application/**`): use case-ы + порты репозиториев (`*RepositoryPort`)
-- **Domain** (`server/src/**/domain/**`): сущности и value objects с инвариантами (без Nest/HTTP/Drizzle)
-- **Infrastructure** (`server/src/**/infrastructure/**`): адаптеры портов (например, Drizzle-репозитории)
+### Слои
 
-На примере доменов:
+| Слой | Путь | Ответственность |
+|------|------|-----------------|
+| **Presentation** | `server/src/<context>/presentation/` | ts-rest контроллеры, `CommandBus` / `QueryBus`, адаптеры DTO ↔ command/query |
+| **Application** | `server/src/<context>/application/` | commands, queries, handlers, event-handlers, порты write/read |
+| **Domain** | `server/src/<context>/domain/` | `AggregateRoot`, value objects, domain events, инварианты |
+| **Infrastructure** | `server/src/<context>/infrastructure/` | Drizzle-адаптеры портов (`*repository.adapter.ts`) |
 
-- **User**
-  - Domain: `User`, `Email`, `UserId`
-  - Application: `CreateUserUseCase`, `GetUserUseCase`, `ListUsersUseCase` + `UserRepositoryPort`
-  - Infrastructure: `DrizzleUserRepository` (валидация строк через `UserSchema.safeParse`)
-  - Presentation: `UserController` с `@ts-rest/nest`, `validateResponses: true`
-- **Post**
-  - Domain: `Post`, `PostId`
-  - Application: `CreatePostUseCase`, `GetPostUseCase`, `ListPostsUseCase` + `PostRepositoryPort`
-  - Infrastructure: `DrizzlePostRepository` (валидация строк через `PostSchema.safeParse`)
-  - Presentation: `PostController` с `@ts-rest/nest`, `validateResponses: true`
+Пакет `@repo/contract` **не импортируется** в application/domain — только в presentation (HTTP) и infrastructure (сверка строк БД с `UserSchema` / `PostSchema`).
+
+### Паттерны
+
+- **CQRS**: команды меняют состояние через write-порт и агрегат; запросы читают `*ReadModel` через read-порт
+- **Domain events**: `apply()` в агрегате, `commit()` после save; подписчики `@EventsHandler` в application
+- **Repository + Adapter**: порты в application, реализация в infrastructure (GoF Adapter в именах файлов)
+- **Персистенция**: state-based (SQLite), не Event Sourcing
+
+### User (`server/src/user/`)
+
+- **Domain**: `User` (`AggregateRoot`), `Email`, `UserId`; события `UserCreated`, `UserNameUpdated`, `UserDeleted`
+- **Application**: `CreateUserCommandHandler`, `UpdateUserCommandHandler`, `DeleteUserCommandHandler`, `GetUserQueryHandler`, `ListUsersQueryHandler`; порты `UserWriteRepositoryPort`, `UserReadRepositoryPort`
+- **Infrastructure**: `DrizzleUserRepositoryAdapter` (также `InMemoryUserRepositoryAdapter` для тестов/заготовки)
+- **Presentation**: `UserController`, `CreateUserCommandAdapter`, `UpdateUserCommandAdapter`, `UserDtoAdapter`
+- **Карта**: `server/src/user/docs/.dio`
+
+### Post (`server/src/post/`)
+
+- **Domain**: `Post` (`AggregateRoot`), `PostId`; событие `PostCreated`
+- **Application**: `CreatePostCommandHandler`, `GetPostQueryHandler`, `ListPostsQueryHandler`; порты `PostWriteRepositoryPort`, `PostReadRepositoryPort`
+- **Infrastructure**: `DrizzlePostRepositoryAdapter`
+- **Presentation**: `PostController`, `CreatePostCommandAdapter`, `PostDtoAdapter`
+- **Карта**: `server/src/post/docs/.dio`
+
+### Write-поток (пример)
+
+```text
+Controller → *CommandAdapter → CommandBus → CommandHandler
+  → AggregateRoot (apply domain event) → WriteRepository.save
+  → aggregate.commit() → EventBus → @EventsHandler
+```
+
+### Query-поток
+
+```text
+Controller → QueryBus → QueryHandler → ReadRepository → *ReadModel → *DtoAdapter → HTTP
+```
 
 ## Клиент и контракт
 
@@ -150,9 +182,9 @@ npx drizzle-kit push
 В `contract/` описывается ts-rest роутер и Zod-схемы:
 
 - маршруты (`/users`, `/posts`)
-- методы (`GET`, `POST`)
+- методы (`GET`, `POST`, `PATCH`, `DELETE` для `user`)
 - входные данные (path params, body)
-- возможные ответы (status codes + schema)
+- возможные ответы (status codes + schema; `strictStatusCodes: true` в роутерах)
 
 На сервере контроллеры используют **те же** определения:
 
@@ -181,8 +213,15 @@ npx drizzle-kit push
 - **Один источник истины**: схемы/типы/маршруты не дублируются между frontend/backend.
 - **Изменения “сквозняком”**: меняете контракт — TypeScript подсвечивает все места на сервере/клиенте/БД, которые нужно обновить.
 - **Меньше “плавающих” багов**: ошибки формата данных ловятся либо на этапе сборки, либо сразу при чтении из БД/отдаче ответа.
-- **DDD не ломается**: домен и application не тянут HTTP/ORM, но на границе (presentation + repo) строго соблюдают контракт.
+- **DDD не ломается**: домен и application не тянут HTTP/ORM; контракт — на границе presentation и infrastructure.
+
+## Что пока не в scope
+
+- **Event Sourcing** (event store, replay, проекции из потока событий)
+- Физически отдельные таблицы read-моделей (CQRS пока логический, одна БД)
+- Domain services, specifications, доменные исключения как отдельные типы
+- Межконтекстная интеграция через события (`UserCreated` → реакция в `post`)
 
 ## Кратко
 
-Один контракт описывает HTTP и формы `user`/`post`; сервер использует этот контракт в контроллерах и проверяет соответствие таблиц/строк; клиент получает те же типы и маршруты через `@ts-rest/core`.
+Один контракт описывает HTTP и формы `user`/`post`; сервер использует CQRS + агрегаты с domain events, контракт на границе API и БД; клиент получает те же типы и маршруты через `@ts-rest/core`.
